@@ -12,6 +12,7 @@ from csv_dataloader import *
 def has_pattern(word, pattern):
     pass
 
+
 def preprocess(tokens):
 
     stopwords = nltk.corpus.stopwords.words('english')
@@ -23,11 +24,12 @@ def preprocess(tokens):
 
 def main():
 
-    data={}
+    NFOLD = 5
+
     dataloader = csv_dataloader()
     data, label, score = dataloader.read_csv()
     dataloader.summary()
-    nfolds = dataloader.nfold(5)
+    nfolds = dataloader.nfold(NFOLD)
 
     words = str(data.viewvalues())
     tokens = nltk.WordPunctTokenizer().tokenize(words.lower())
@@ -35,14 +37,21 @@ def main():
 
     tokens = preprocess(tokens)
 
-    tokensfile = open('output/tokens.txt', 'wr')
-    tokensfile.write(str(tokens))
+    # tokensfile = open('output/tokens.txt', 'wr')
+    # tokensfile.write(str(tokens))
 
-    print len(tokens)
+    train_id = []
+    for i in range(NFOLD-2):
+        train_id += nfolds[i]
 
-    text8file = open('data/text8.txt', 'r')
-    text8 = text8file.read();
-    print len(text8)
+    test_id = nfolds[NFOLD-1]
+
+    print len(train_id)
+    print train_id
+    print len(test_id)
+    print test_id
+
+
 
 
 
