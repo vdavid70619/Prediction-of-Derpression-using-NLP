@@ -95,6 +95,19 @@ class csv_dataloader:
 
         return folds
 
+    def batch_retrieve(self, ids):
+        batch_label={}
+        batch_score={}
+        batch_data={}
+
+        for id in ids:
+            batch_data[id] = self.data[id]
+            batch_label[id] = self.label[id]
+            batch_score[id] = self.score[id]
+
+        return batch_data, batch_label, batch_score
+
+
     def summary(self):
         print "Total Data size: " + str(len(self.data.keys()))
         print "Positive Data size: " + str(sum(self.label.values()))
