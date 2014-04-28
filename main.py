@@ -5,22 +5,21 @@
 import re
 import os
 import nltk
-import cPickle as pickle
+# import cPickle as pickle
 
-from numpy import *
 from sklearn import svm
 from sklearn.metrics import f1_score
-from sklearn.cluster import KMeans
 
 
 from csv_dataloader import *
 from get_word2vec import *
+from get_clusters import *
 
 
 ## save a class object to a file using pickle
-def save_object(obj, filename):
-    with open(filename, 'w+') as output:
-        pickle.dump(obj, output, pickle.HIGHEST_PROTOCOL)
+# def save_object(obj, filename):
+#     with open(filename, 'w+') as output:
+#         pickle.dump(obj, output, pickle.HIGHEST_PROTOCOL)
 
 
 def has_pattern(word, pattern):
@@ -70,30 +69,25 @@ def main():
     train_vectors = word2vec.batch_convert(tokens)
     print '#Vectors from training data: ' + str(len(train_vectors))
 
-    n_words = 500
-    if not os.path.exists('output/clustering.pk'):
-        kmeans = KMeans(init='k-means++', n_clusters=n_words, verbose=1, n_jobs=1)
-        kmeans.fit(train_vectors)
-        save_object(kmeans, 'output/clustering.pk')
-        print kmeans.get_params()
+    n_topics = 50
+    clusters = get_clusters(method='gmm', n_topics=n_topics)
+    if not os.path.exists('output/clustering_gmm.pk'):
+        print 'Training Clusters...'
+        clusters.fit(train_vectors)
+        clusters.save('output/clustering_gmm.pk')
+        clusters.summary()
     else:
-        kmeans = pickle.load(open('output/clustering.pk', 'r'))
+        clusters.load('output/clustering_gmm.pk')
 
     ### Generate Train Data Encodings
-    top_k = 20
-    encode = zeros((len(train_id), n_words))
+    encode = zeros((len(train_id), n_topics))
     label = zeros(len(train_id))
     score = zeros(len(train_id))
     i = 0
     for id in train_id:
         tokens = preprocess(train_data[id])
         vec = word2vec.batch_convert(tokens)
-        distance = kmeans.transform(vec)
-        hist = sum(1/(distance+1e-6), axis=0)
-        hist = hist/(sum(hist, axis=0)+1e-6)
-        sort_ind = argsort(hist)[::-1]  # reverse index sequence after argsort
-        hist[sort_ind[top_k:]]=0
-        encode[i,:] = hist
+        encode[i,:] = clusters.encode(vec)
         label[i] = train_label[id]
         # score[i] = train_score[id]
         i +=1
@@ -101,7 +95,7 @@ def main():
     print encode
     print label
 
-    classifier = svm.NuSVC(kernel='linear', verbose=True)
+    classifier = svm.NuSVC(nu=0.45, kernel='linear', verbose=True)
     weight = label+1 # pos:neg = 2:1 for imbalanced training
     classifier.fit(encode, label, weight)
 
@@ -117,18 +111,13 @@ def main():
     test_data, test_label, _ = dataloader.batch_retrieve(test_id)
 
     ### Generate Test Data Encodings
-    encode = zeros((len(test_id), n_words))
+    encode = zeros((len(test_id), n_topics))
     label = zeros(len(test_id))
     i = 0
     for id in test_id:
         tokens = preprocess(test_data[id])
         vec = word2vec.batch_convert(tokens)
-        distance = kmeans.transform(vec)
-        hist = sum(1/(distance+1e-6), axis=0)
-        hist = hist/(sum(hist, axis=0)+1e-6)
-        sort_ind = argsort(hist)[::-1]  # reverse index sequence after argsort
-        hist[sort_ind[top_k:]]=0
-        encode[i,:] = hist
+        encode[i,:] = clusters.encode(vec)
         label[i] = test_label[id]
         i +=1
 
