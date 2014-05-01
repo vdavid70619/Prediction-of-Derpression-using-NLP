@@ -6,6 +6,8 @@
 import csv
 import math
 
+from random import shuffle
+
 class csv_dataloader:
     #### private
     _datafile_path = 'data/train_statuses.csv'
@@ -19,7 +21,7 @@ class csv_dataloader:
     label = {}
     score = {}
 
-    def __init__(self, datafile='data/train_statuses.csv', labelfile='data/trainScores.csv', limit=-1, nolabel=False):
+    def __init__(self, datafile='data/train_statuses.csv', labelfile='data/fixed_train_gender_class.csv', limit=-1, nolabel=False):
         self._datafile_path = datafile
         self._labelfile_path = labelfile
         self._nolabel = nolabel
@@ -61,8 +63,8 @@ class csv_dataloader:
                     counts += 1
                     #print  "ids: " + row[0] + " date: " + row[1] + " score: " + row[2] + " label: " + row[3]
 
-                    self.label[row[0]] = int(row[3]=="+")
-                    self.score[row[0]] = int(row[2])
+                    self.label[row[0]] = int(row[-1]=="+")
+                    self.score[row[0]] = int(row[-2])
 
                     if counts==self._limit:
                         break
@@ -94,6 +96,30 @@ class csv_dataloader:
             folds[(i/neg_fold_count)].append(key)
 
         return folds
+
+    def balance(self, ids, method='Downsample', K=2):
+        method = method.lower()
+
+        neg = []
+        pos = []
+
+        for id in ids:
+            if self.label[id]==1:
+                pos += id
+            else:
+                neg += id
+
+        ratio = len(neg)/len(pos)
+
+        neg = shuffle(neg)
+
+        print type(neg)
+        print neg
+
+        if method=='downsample':
+            neg = neg[:min(K, ratio)*len(pos)]
+
+        return pos+neg
 
     def batch_retrieve(self, ids):
         batch_label={}

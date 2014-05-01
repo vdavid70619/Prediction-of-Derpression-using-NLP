@@ -79,6 +79,8 @@ def main():
     else:
         clusters.load('output/clustering_gmm.pk')
 
+    train_id = dataloader.balance(train_id)
+
     ### Generate Train Data Encodings
     encode = zeros((len(train_id), n_topics))
     label = zeros(len(train_id))
