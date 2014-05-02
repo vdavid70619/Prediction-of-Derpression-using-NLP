@@ -6,7 +6,7 @@
 import csv
 import math
 
-from random import shuffle
+import random
 
 class csv_dataloader:
     #### private
@@ -104,17 +104,13 @@ class csv_dataloader:
         pos = []
 
         for id in ids:
-            if self.label[id]==1:
-                pos += id
+            if self.label[id] == 1:
+                pos.append(id)
             else:
-                neg += id
+                neg.append(id)
 
         ratio = len(neg)/len(pos)
-
-        neg = shuffle(neg)
-
-        print type(neg)
-        print neg
+        neg = random.sample(neg, len(neg))
 
         if method=='downsample':
             neg = neg[:min(K, ratio)*len(pos)]
