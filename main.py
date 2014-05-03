@@ -84,15 +84,15 @@ def main():
         train_vectors = word2vec.batch_convert(tokens)
         print '#Vectors from training data: ' + str(len(train_vectors))
 
-        n_topics = 50
-        clusters = get_clusters(method='gmm', n_topics=n_topics)
-        if not os.path.exists('output/clustering_gmm.pk'):
+        n_topics = 256
+        clusters = get_clusters(method='kmeans', n_topics=n_topics)
+        if not os.path.exists('output/clustering_256.pk'):
             print 'Training Clusters...'
             clusters.fit(train_vectors)
-            clusters.save('output/clustering_gmm.pk')
+            clusters.save('output/clustering_256.pk')
             clusters.summary()
         else:
-            clusters.load('output/clustering_gmm.pk')
+            clusters.load('output/clustering_256.pk')
 
         train_id = dataloader.balance(train_id)
 

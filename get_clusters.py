@@ -23,11 +23,11 @@ class get_clusters(object):
         self.clusters.fit(X)
 
     def load(self, filename):
-        with open(filename, 'r') as input:
+        with open(filename, 'rb') as input:
             self.clusters = pickle.load(input)
 
     def save(self, filename):
-        with open(filename, 'w+') as output:
+        with open(filename, 'wb+') as output:
             ## save a class object to a file using pickle
             pickle.dump(self.clusters, output, pickle.HIGHEST_PROTOCOL)
 
