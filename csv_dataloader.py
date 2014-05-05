@@ -26,8 +26,14 @@ class csv_dataloader:
         self._labelfile_path = labelfile
         self._nolabel = nolabel
         self._limit = limit
-    
-    def read_csv(self):
+
+
+    def read_csv(self, applyfun=(lambda x: x+' ')):
+        '''
+        Read in csv and do preprocessing on it
+        applyfun: string -> anything
+        '''
+
         ### Read train data from csv file
         with open(self._datafile_path, 'rb') as data_file:
             data_reader = csv.reader(data_file, dialect="excel")
@@ -41,11 +47,11 @@ class csv_dataloader:
                 #print  "ids: " + row[0] + " posts: " + row[1] + " data: " + row[2]
 
                 if row[0] not in self.data:
-                    self.data[row[0]] = row[1]
-                    self.ldata[row[0]] = [row[1]]
+                    self.data[row[0]] = applyfun(row[1])
+                    self.ldata[row[0]] = [applyfun(row[1])]
                 else:
-                    self.data[row[0]] += (" " + row[1]) ## append space to sperate lines
-                    self.ldata[row[0]].append(row[1])
+                    self.data[row[0]] += applyfun(row[1]) ## append space to sperate lines
+                    self.ldata[row[0]].append(applyfun(row[1]))
 
                 if counts==self._limit:
                     break
@@ -121,14 +127,15 @@ class csv_dataloader:
         batch_label={}
         batch_score={}
         batch_data={}
+        batch_ldata={}
 
         for id in ids:
             batch_data[id] = self.data[id]
+            batch_ldata[id] = self.ldata[id]
             batch_label[id] = self.label[id]
             batch_score[id] = self.score[id]
 
-        return batch_data, batch_label, batch_score
-
+        return batch_data, batch_ldata, batch_label, batch_score
 
     def summary(self):
         print "Total Data size: " + str(len(self.data.keys()))
