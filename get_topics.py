@@ -19,6 +19,15 @@ class get_word2id(object):
     def ids(self):
         return self._id
 
+    def load(self, filename):
+        with open(filename, 'rb') as input:
+            self._id = pickle.load(input)
+
+    def save(self, filename):
+        with open(filename, 'wb+') as output:
+            ## save a class object to a file using pickle
+            pickle.dump(self._id, output, pickle.HIGHEST_PROTOCOL)
+
 class get_topics(object):
     def __init__(self, id2word, method='LDA', n_topics=20):
         self.method = method.lower()
