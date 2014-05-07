@@ -39,8 +39,8 @@ class csv_dataloader:
             data_reader = csv.reader(data_file, dialect="excel")
             counts = 0
             for row in data_reader:
-                if verbose:
-                    print counts
+                if verbose and divmod(counts, 10000)==0:
+                    print 'line read '+ str(counts)
 
                 if counts==0:
                     counts += 1
