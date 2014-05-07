@@ -44,13 +44,13 @@ def main():
     dataloader = csv_dataloader(datafile='data/extra_statuses.csv')
     dataloader.read_csv(applyfun=preprocess, verbose=True)
     dataloader.summary()
-    tokens = sum(dataloader.data.viewvalues(), [])
+    tokens = sum(dataloader.ldata.viewvalues(), [])
     print '#Tokens from training data: ' + str(len(tokens))
     print 'Readin done'
 
     ### Get word2id first
     word2id = get_word2id()
-    if not os.path.exists('output/lda_100.pk'):
+    if not os.path.exists('word2id.pk'):
         word2id.fit(tokens)
         word2id.save('word2id.pk')
     else:
@@ -61,13 +61,13 @@ def main():
     ### Train LDA
     n_topics = 100
     topics = get_topics(id2word=ids, method='lda', n_topics=n_topics)
-    if not os.path.exists('output/lda_100.pk'):
+    if not os.path.exists('output/lda_all_100.pk'):
         print 'Training LDA...'
         topics.fit(tokens)
-        topics.save('output/lda_100.pk')
+        topics.save('output/lda_all_100.pk')
         topics.summary()
     else:
-        topics.load('output/lda_100.pk')
+        topics.load('output/lda_all_100.pk')
 
 
 
