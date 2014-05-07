@@ -66,7 +66,7 @@ class get_topics(object):
             ## save a class object to a file using pickle
             pickle.dump(self.model, output, pickle.HIGHEST_PROTOCOL)
 
-    def encode(self, X, topk=20):
+    def encode(self, X, topk=20, normalize=True):
         '''
         # Gensim treat corpus input as chunks of lists
         # First one in the return tupleis chunks of gammas.
@@ -77,12 +77,13 @@ class get_topics(object):
 
         mm = [self.id2word.doc2bow(line) for line in X]
         # Update the LDA model
-        self.model.update(corpus=mm)
+        #self.model.update(corpus=mm)
 
         gammas = self.model.inference(mm)[0]
         hist = np.sum(gammas, axis=0)
-        hist = hist/np.sum(hist, axis=0)
-
+        if normalize:
+            hist = hist/np.sum(hist, axis=0)
+        #print hist
         sort_ind = np.argsort(hist)[::-1]  # reverse index sequence after argsort
         hist[sort_ind[topk:]]=0
         return hist
