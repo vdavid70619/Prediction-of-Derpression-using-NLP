@@ -28,7 +28,7 @@ class csv_dataloader:
         self._limit = limit
 
 
-    def read_csv(self, applyfun=(lambda x: x+' ')):
+    def read_csv(self, applyfun=(lambda x: x+' '), verbose=False):
         '''
         Read in csv and do preprocessing on it
         applyfun: string -> anything
@@ -39,6 +39,9 @@ class csv_dataloader:
             data_reader = csv.reader(data_file, dialect="excel")
             counts = 0
             for row in data_reader:
+                if verbose:
+                    print counts
+
                 if counts==0:
                     counts += 1
                     continue
