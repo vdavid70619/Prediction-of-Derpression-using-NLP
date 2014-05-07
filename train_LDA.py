@@ -42,17 +42,21 @@ def main():
     n_fold = 5
 
     dataloader = csv_dataloader(datafile='data/extra_statuses.csv')
-    dataloader.read_csv(applyfun=preprocess)
+    dataloader.read_csv(applyfun=preprocess, verbose=True)
     dataloader.summary()
+    tokens = sum(dataloader.data.viewvalues(), [])
+    print '#Tokens from training data: ' + str(len(tokens))
+    print 'Readin done'
 
     ### Get word2id first
-    tokens = sum(dataloader.data.viewvalues(), [])
     word2id = get_word2id()
-    word2id.fit(tokens)
+    if not os.path.exists('output/lda_100.pk'):
+        word2id.fit(tokens)
+        word2id.save('word2id.pk')
+    else:
+        word2id.load('word2id.pk')
     ids = word2id.ids()
-    word2id.save('word2id.pk')
     print "#Id: " + str(len(ids.keys()))
-    print '#Tokens from training data: ' + str(len(tokens))
 
     ### Train LDA
     n_topics = 100
