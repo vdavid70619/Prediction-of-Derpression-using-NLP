@@ -39,7 +39,7 @@ def preprocess(words):
 
 def main():
 
-    n_fold = 5
+    n_fold = 10
 
     dataloader = csv_dataloader()
     dataloader.read_csv()

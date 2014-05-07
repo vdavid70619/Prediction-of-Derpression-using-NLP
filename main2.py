@@ -92,7 +92,7 @@ def main():
         tokens = sum(train_ldata.viewvalues(), [])
         print '#Tokens from training data: ' + str(len(tokens))
 
-        n_topics = 100
+        n_topics = 25
         topics = get_topics(id2word=ids, method='lda', n_topics=n_topics)
         if not os.path.exists('output/lda_25.pk'):
             print 'Training LDA...'
@@ -101,6 +101,7 @@ def main():
             topics.summary()
         else:
             topics.load('output/lda_25.pk')
+
 
         ### Balance Train Data
         train_id = dataloader.balance(train_id, K=1)

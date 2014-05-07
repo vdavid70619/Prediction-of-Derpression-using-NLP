@@ -90,6 +90,8 @@ class get_topics(object):
 
 
     def summary(self):
+        print '#Topics: ' + str(self.model.num_topics)
+
         if self.method == 'lda':
             topics = self.model.show_topics()
         elif self.method == 'hdp':
