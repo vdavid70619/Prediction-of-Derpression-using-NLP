@@ -48,7 +48,7 @@ def predict():
 
     n_topics = 100
     topics = get_topics(id2word=ids, method='lda', n_topics=n_topics)
-    topics.load('output/lda_25.pk')
+    topics.load('output/lda_all_100.pk')
 
     ### Generate Test Data Encodings
     encode = np.zeros((len(test_id), n_topics))
@@ -69,7 +69,7 @@ def predict():
 
     print encode
 
-    classifier = load('output/model_0.5.pk')
+    classifier = load('output/model_0.48275862069.pk')
     predict_label = classifier.predict(encode)
 
     with open('output/result.csv', 'w+') as file:

@@ -158,7 +158,7 @@ class csv_dataloader(object):
         if method=='downsample':
             neg = neg[:min(K, ratio)*len(pos)]
 
-        return pos+neg
+        return pos+neg, pos, neg
 
     def batch_retrieve(self, ids):
         batch_label={}

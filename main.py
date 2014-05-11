@@ -18,9 +18,9 @@ from get_clusters import *
 
 
 ## save a class object to a file using pickle
-# def save_object(obj, filename):
-#     with open(filename, 'w+') as output:
-#         pickle.dump(obj, output, pickle.HIGHEST_PROTOCOL)
+def save(obj, filename):
+    with open(filename, 'wb+') as output:
+        pickle.dump(obj, output, pickle.HIGHEST_PROTOCOL)
 
 
 def has_pattern(word, pattern):
@@ -28,7 +28,7 @@ def has_pattern(word, pattern):
 
 
 def preprocess(words):
-
+    words = unicode(words, errors='ignore') #This is for gensim
     tokens = nltk.WordPunctTokenizer().tokenize(words.lower())
     # tokens = list(set(tokens))
     stopwords = nltk.corpus.stopwords.words('english')
@@ -41,9 +41,14 @@ def main():
 
     n_fold = 10
 
-    dataloader = csv_dataloader()
-    dataloader.read_csv()
+    dataloader = csv_dataloader(extrafile='data/fixed_train_gender_class.csv', extra=True)
+    if not os.path.exists('output/data_cache.pk'):
+        dataloader.read_csv(applyfun=preprocess)
+        dataloader.save('output/data_cache.pk')
+    else:
+        dataloader.load('output/data_cache.pk')
     dataloader.summary()
+    print "Read in finished"
 
     ### ============================================================
     ###                         n fold
@@ -52,6 +57,7 @@ def main():
 
     ### Load pre-train word2vector model
     word2vec = get_word2vec(model='data/GoogleNews-vectors-negative300.bin', binary=True, size=300)
+    print 'Pretrained word2vec loaded'
 
     nfolds = dataloader.nfold(n_fold)
     fscores = []
@@ -67,17 +73,15 @@ def main():
                 train_id += nfolds[i]
 
 
-
         ### ============================================================
         ###                         Train Part
         ### ============================================================
         print 'Training>>>>>>>>>>>>>>>>>>>>>>>>>'
 
-        train_data, train_label, train_score = dataloader.batch_retrieve(train_id)
+        train_data, _, train_label, train_score, _, _ = dataloader.batch_retrieve(train_id)
 
         ### Train BoW
-        words = str(train_data.viewvalues())
-        tokens = preprocess(words)
+        tokens = str(train_data.viewvalues())
         print '#Tokens from training data: ' + str(len(tokens))
 
         ### Convert word to vector
@@ -92,6 +96,7 @@ def main():
             clusters.save('output/clustering_gmm_25.pk')
             clusters.summary()
         else:
+            print 'Cluster Model Loaded...'
             clusters.load('output/clustering_gmm_25.pk')
 
         ### Balance Train Data
@@ -128,7 +133,7 @@ def main():
         ### ============================================================
         print 'Testing>>>>>>>>>>>>>>>>>>>>>>>>>'
 
-        test_data, test_label, _ = dataloader.batch_retrieve(test_id)
+        test_data, _, test_label, _, _, _ = dataloader.batch_retrieve(test_id)
 
         ### Generate Test Data Encodings
         encode = zeros((len(test_id), n_topics))
@@ -149,9 +154,13 @@ def main():
 
         print 'F1 score: ' + str(f1_score(label, classifier.predict(encode)))
         fscores.append(f1_score(label, classifier.predict(encode)))
+        models.append(classifier)
 
-    print 'MEAN F1 score: ' + str(mean(fscores))
-    print 'VAR F1 score: ' + str(var(fscores))
+    print 'MEAN F1 score: ' + str(np.mean(fscores))
+    print 'BEST F1 score: ' + str(np.max(fscores)) + ' by Model ' + str(np.argmax(fscores)+1)
+    print 'VAR F1 score: ' + str(np.var(fscores))
+
+    save(models[np.argmax(fscores)], 'output/model_' + str(fscores[np.argmax(fscores)]) + '.pk')
 
 if __name__ == "__main__":
     main()
