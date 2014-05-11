@@ -50,8 +50,8 @@ class csv_dataloader(object):
             data_reader = csv.reader(data_file, dialect="excel")
             counts = 0
             for row in data_reader:
-                if verbose and divmod(counts, 10000)==0:
-                    print 'line read '+ str(counts)
+                if verbose and counts%10000==0:
+                    print '.',
 
                 if counts==0:
                     counts += 1
@@ -70,7 +70,8 @@ class csv_dataloader(object):
 
                 if counts==self._limit:
                     break
-
+            if verbose:
+                print 'Data loaded'
         ### Read train label and score if there is any
         if self._nolabel==False:
             with open(self._labelfile_path, 'rb') as label_file:
@@ -89,7 +90,8 @@ class csv_dataloader(object):
 
                     if counts==self._limit:
                         break
-
+                if verbose:
+                    print 'Label loaded'
         ### Read train label and score if there is any
         if self._extra==True:
             with open(self._extrafile_path, 'rb') as extra_file:
@@ -108,7 +110,8 @@ class csv_dataloader(object):
 
                     if counts==self._limit:
                         break
-
+                if verbose:
+                    print 'Extras loaded'
         return self.data, self.label, self.score
 
     def nfold(self, n):

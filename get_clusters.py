@@ -5,7 +5,7 @@
 
 from sklearn.cluster import KMeans
 from sklearn.mixture import GMM
-from numpy import *
+import numpy as np
 
 import cPickle as pickle
 
@@ -34,13 +34,13 @@ class get_clusters(object):
     def encode(self, X, topk=20):
         if self.method == 'kmeans':
             distance = self.clusters.transform(X)
-            hist = sum(1/(distance+1e-6), axis=0)
+            hist = np.sum(1/(distance+1e-6), axis=0)
         elif self.method == 'gmm':
             probability = self.clusters.predict_proba(X)
-            hist = sum(probability, axis=0)
+            hist = np.sum(probability, axis=0)
 
-        hist = hist/(sum(hist, axis=0)+1e-6)
-        sort_ind = argsort(hist)[::-1]  # reverse index sequence after argsort
+        hist = hist/(np.sum(hist, axis=0)+1e-6)
+        sort_ind = np.argsort(hist)[::-1]  # reverse index sequence after argsort
         hist[sort_ind[topk:]]=0
         return hist
 

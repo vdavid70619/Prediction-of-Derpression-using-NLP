@@ -1,10 +1,8 @@
 """
-    Main function
+    Main function using LDA
 """
 
-import re
 import os
-import nltk
 import cPickle as pickle
 
 import numpy as np
@@ -15,6 +13,7 @@ from sklearn.metrics import f1_score
 from csv_dataloader import *
 from get_topics import *
 from smote import *
+from preprocess import *
 
 
 ## save a class object to a file using pickle
@@ -23,25 +22,9 @@ def save(obj, filename):
         pickle.dump(obj, output, pickle.HIGHEST_PROTOCOL)
 
 
-def has_pattern(word, pattern):
-    pass
+def main(n_fold=10):
 
-
-def preprocess(words):
-
-    words = unicode(words, errors='ignore') #This is for gensim
-    tokens = nltk.WordPunctTokenizer().tokenize(words.lower())
-    # tokens = list(set(tokens))
-    stopwords = nltk.corpus.stopwords.words('english')
-    tokens = [w for w in tokens if w not in stopwords]
-    tokens = [w for w in tokens if len(w)<20 and len(w)>2]
-    tokens = [w for w in tokens if re.match('\W+',w)==None]
-    return tokens
-
-def main():
-
-    n_fold = 10
-
+    ### Load trainning data
     dataloader = csv_dataloader(extrafile='data/fixed_train_gender_class.csv', extra=True)
     if not os.path.exists('output/data_cache.pk'):
         dataloader.read_csv(applyfun=preprocess)
@@ -63,16 +46,17 @@ def main():
     print "#Id: " + str(len(ids.keys()))
     print '#Tokens from training data: ' + str(len(tokens))
 
-    ### Train LDA
+    ### Train and load LDA
     n_topics = 100
+    model_file = 'output/lda_all_100.pk'
     topics = get_topics(id2word=ids, method='lda', n_topics=n_topics)
-    if not os.path.exists('output/lda_all_100.pk'):
+    if not os.path.exists(model_file):
         print 'Training LDA...'
         topics.fit(tokens)
-        topics.save('output/lda_all_100.pk')
+        topics.save(model_file)
         topics.summary()
     else:
-        topics.load('output/lda_all_100.pk')
+        topics.load(model_file)
 
 
     ### ============================================================
@@ -185,7 +169,7 @@ def main():
     print 'BEST F1 score: ' + str(np.max(fscores)) + ' by Model ' + str(np.argmax(fscores)+1)
     print 'VAR F1 score: ' + str(np.var(fscores))
 
-    save(models[np.argmax(fscores)], 'output/model_' + str(fscores[np.argmax(fscores)]) + '.pk')
+    save(models[np.argmax(fscores)], 'output/model_LDA_' + str(fscores[np.argmax(fscores)]) + '.pk')
 
 if __name__ == "__main__":
     main()

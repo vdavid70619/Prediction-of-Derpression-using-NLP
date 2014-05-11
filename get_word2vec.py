@@ -4,7 +4,7 @@
 '''
 
 import gensim
-import numpy
+import numpy as np
 import os
 
 class get_sentences(object):
@@ -48,7 +48,7 @@ class get_word2vec(object):
             return None
 
     def batch_convert(self, words):
-        vectors = numpy.zeros((len(words), self.vdim))
+        vectors = np.zeros((len(words), self.vdim))
         i=0
         for word in words:
             vec = self[word]

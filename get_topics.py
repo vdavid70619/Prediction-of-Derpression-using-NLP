@@ -101,3 +101,5 @@ class get_topics(object):
         for topic in topics:
             print str(i) + ': ' + topic
             i += 1
+
+
