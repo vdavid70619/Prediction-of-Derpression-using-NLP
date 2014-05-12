@@ -9,12 +9,13 @@ import numpy as np
 from sklearn import preprocessing
 from sklearn import svm
 from sklearn.metrics import f1_score
+from smote import *
 
 from csv_dataloader import *
 from get_topics import *
-from smote import *
+from get_LIWC import *
 from preprocess import *
-
+from encoder1 import *
 
 ## save a class object to a file using pickle
 def save(obj, filename):
@@ -23,7 +24,6 @@ def save(obj, filename):
 
 
 def main(n_fold=10):
-
     ### Load trainning data
     dataloader = csv_dataloader(extrafile='data/fixed_train_gender_class.csv', extra=True)
     if not os.path.exists('output/data_cache.pk'):
@@ -45,6 +45,10 @@ def main(n_fold=10):
     ids = word2id.ids()
     print "#Id: " + str(len(ids.keys()))
     print '#Tokens from training data: ' + str(len(tokens))
+
+    ### Calculate LIWC hist
+    LIWC = get_LIWC()
+    #print LIWC.calculate_hist(tokens, normalize=False)
 
     ### Train and load LDA
     n_topics = 100
@@ -83,42 +87,16 @@ def main(n_fold=10):
         ### ============================================================
         print 'Training>>>>>>>>>>>>>>>>>>>>>>>>>'
 
-        train_data, train_ldata, train_label, _, train_gender, train_time = dataloader.batch_retrieve(train_id)
+        train_data = dataloader.data_retrieve(train_id)
 
         ### Balance Train Data
         _, train_pos_id, train_neg_id = dataloader.balance(train_id, K=2)
 
-        ### Generate Train Positive and Negative Data Encodings Separately
-        encode_pos = np.zeros((len(train_pos_id), n_topics))
-        gender_pos = np.zeros((len(train_pos_id), 1))
-        time_pos = np.zeros((len(train_pos_id), 4))
-        i = 0
-        for id in train_pos_id:
-            tokens = train_ldata[id]
-            #tokens = [train_data[id]]
-            encode_pos[i,:] = topics.encode(tokens)
-            gender_pos[i] = train_gender[id]
-            time_pos[i,:] = [train_time[id].month, train_time[id].day, train_time[id].hour, train_time[id].minute]
-            i +=1
-
-        encode_pos = np.concatenate((encode_pos, gender_pos, time_pos), axis=1)
-
+        encode_pos = encode_feature(train_data, train_pos_id, [topics, LIWC])
         encode_pos = SMOTE(encode_pos, 200, len(train_pos_id)/4)
-
         label_pos = np.ones(len(encode_pos))
-        encode_neg = np.zeros((len(train_neg_id), n_topics))
-        gender_neg = np.zeros((len(train_neg_id), 1))
-        time_neg = np.zeros((len(train_neg_id), 4))
-        i = 0
-        for id in train_neg_id:
-            tokens = train_ldata[id]
-            #tokens = [train_data[id]]
-            encode_neg[i,:] = topics.encode(tokens)
-            gender_neg[i] = train_gender[id]
-            time_neg[i,:] = [train_time[id].month, train_time[id].day, train_time[id].hour, train_time[id].minute]
-            i +=1
 
-        encode_neg = np.concatenate((encode_neg, gender_neg, time_neg), axis=1)
+        encode_neg = encode_feature(train_data, train_pos_id, [topics, LIWC])
         label_neg = np.zeros(len(encode_neg))
 
         encode = np.concatenate((encode_pos, encode_neg), axis=0)
@@ -126,7 +104,7 @@ def main(n_fold=10):
         print encode.shape
         print label.shape
 
-
+        ### Train
         encode = preprocessing.scale(encode)
         #classifier = svm.NuSVC(kernel='linear', verbose=True, cache_size=4000)
         classifier = svm.LinearSVC(verbose=True)
@@ -141,27 +119,16 @@ def main(n_fold=10):
         ### ============================================================
         print 'Testing>>>>>>>>>>>>>>>>>>>>>>>>>'
 
-        test_data, test_ldata, test_label, _, test_gender, test_time = dataloader.batch_retrieve(test_id)
+        test_data = dataloader.data_retrieve(test_id)
 
         ### Generate Test Data Encodings
-        encode = np.zeros((len(test_id), n_topics))
-        label = np.zeros(len(test_id))
-        gender = np.zeros((len(test_id),1))
-        time = np.zeros((len(test_id),4))
-        i = 0
-        for id in test_id:
-            tokens = test_ldata[id]
-            #tokens = [test_data[id]]
-            encode[i,:] = topics.encode(tokens)
-            label[i] = test_label[id]
-            gender[i] = test_gender[id]
-            time[i,:] = [test_time[id].month, test_time[id].day, test_time[id].hour, test_time[id].minute]
-            i +=1
+        encode = encode_feature(test_data, test_id, [topics, LIWC])
+        label = dataloader.label_retrieve(test_id)
 
-        encode = np.concatenate((encode, gender, time), axis=1)
+        ### Test
         encode = preprocessing.scale(encode)
-
         print 'F1 score: ' + str(f1_score(label, classifier.predict(encode)))
+
         fscores.append(f1_score(label, classifier.predict(encode)))
         models.append(classifier)
 

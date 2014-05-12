@@ -163,25 +163,32 @@ class csv_dataloader(object):
 
         return pos+neg, pos, neg
 
-    def batch_retrieve(self, ids):
-        batch_label={}
-        batch_score={}
-        batch_data={}
-        batch_ldata={}
-        batch_gender={}
-        batch_time={}
+    def data_retrieve(self, ids):
+        data = {}
+        data['label']={}
+        data['score']={}
+        data['data']={}
+        data['ldata']={}
+        data['gender']={}
+        data['time']={}
 
         for id in ids:
-            batch_data[id] = self.data[id]
-            batch_ldata[id] = self.ldata[id]
+            data['data'][id] = self.data[id]
+            data['ldata'][id] = self.ldata[id]
             if not self._nolabel:
-                batch_label[id] = self.label[id]
-                batch_score[id] = self.score[id]
+                data['label'][id] = self.label[id]
+                data['score'][id] = self.score[id]
             if self._extra:
-                batch_gender[id] = self.gender[id]
-                batch_time[id] = self.time[id]
+                data['gender'][id] = self.gender[id]
+                data['time'][id] = self.time[id]
 
-        return batch_data, batch_ldata, batch_label, batch_score, batch_gender, batch_time
+        return data
+
+    def label_retrieve(self, ids):
+        labels = []
+        for id in ids:
+            labels.append(self.label[id])
+        return labels
 
     def summary(self):
         print "Total Data size: " + str(len(self.data.keys()))

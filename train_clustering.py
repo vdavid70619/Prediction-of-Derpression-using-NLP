@@ -8,11 +8,16 @@ from get_clusters import *
 from get_word2vec import *
 from preprocess import *
 
+## save a class object to a file using pickle
+def save(obj, filename):
+    with open(filename, 'wb+') as output:
+        pickle.dump(obj, output, pickle.HIGHEST_PROTOCOL)
+
 def train_clustering(n_topics=100, method='gmm'):
 
     ### Load extra data
     dataloader = csv_dataloader(datafile='data/extra_statuses.csv')
-    CACHE_FILE = 'output/data_cache.pk'
+    CACHE_FILE = 'output/extra_cache.pk'
     if not os.path.exists(CACHE_FILE):
         dataloader.read_csv(applyfun=preprocess, verbose=True)
         dataloader.save(CACHE_FILE)
@@ -30,6 +35,7 @@ def train_clustering(n_topics=100, method='gmm'):
 
     train_vectors = word2vec.batch_convert(tokens)
     print '#Vectors from training data: ' + str(len(train_vectors))
+    save(train_vectors, 'output/extra_vectors.pk')
 
     ### Train Clustering
     clusters = get_clusters(method=method, n_topics=n_topics)

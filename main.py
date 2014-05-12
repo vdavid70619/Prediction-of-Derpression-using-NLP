@@ -9,21 +9,21 @@ from sklearn import preprocessing
 from sklearn import svm
 from sklearn.metrics import f1_score
 
+from smote import *
 import numpy as np
 from csv_dataloader import *
 from get_word2vec import *
 from get_clusters import *
+from get_LIWC import *
+from encoder import *
 from preprocess import *
-
 
 ## save a class object to a file using pickle
 def save(obj, filename):
     with open(filename, 'wb+') as output:
         pickle.dump(obj, output, pickle.HIGHEST_PROTOCOL)
 
-
 def main(n_fold=10):
-
     ### Load data
     dataloader = csv_dataloader(extrafile='data/fixed_train_gender_class.csv', extra=True)
     if not os.path.exists('output/data_cache.pk'):
@@ -40,7 +40,7 @@ def main(n_fold=10):
 
     ### Train BoW
     n_topics = 25
-    model_file = 'output/clustering_gmm_251.pk';
+    model_file = 'output/clustering_gmm_25.pk';
     clusters = get_clusters(method='gmm', n_topics=n_topics)
     if not os.path.exists(model_file):
         ### Convert word to vector
@@ -55,6 +55,10 @@ def main(n_fold=10):
     else:
         print 'Cluster Model Loaded...'
         clusters.load(model_file)
+
+    ### Calculate LIWC hist
+    LIWC = get_LIWC()
+    #print LIWC.calculate_hist(tokens, normalize=False)
 
     ### ============================================================
     ###                         n fold
@@ -80,30 +84,27 @@ def main(n_fold=10):
         ### ============================================================
         print 'Training>>>>>>>>>>>>>>>>>>>>>>>>>'
 
-        train_data, _, train_label, _, _, _ = dataloader.batch_retrieve(train_id)
+        train_data = dataloader.data_retrieve(train_id)
 
         ### Balance Train Data
-        train_id, _, _ = dataloader.balance(train_id)
+        _, train_pos_id, train_neg_id = dataloader.balance(train_id, K=2)
 
-        ### Generate Train Data Encodings
-        encode = zeros((len(train_id), n_topics))
-        label = zeros(len(train_id))
-        i = 0
-        for id in train_id:
-            tokens = train_data[id]
-            vec = word2vec.batch_convert(tokens)
-            encode[i,:] = clusters.encode(vec)
-            label[i] = train_label[id]
-            i +=1
+        encode_pos = encode_feature(train_data, train_pos_id, [word2vec, clusters, LIWC])
+        encode_pos = SMOTE(encode_pos, 200, len(train_pos_id)/4)
+        label_pos = np.ones(len(encode_pos))
 
-        #print encode
-        #print label
+        encode_neg = encode_feature(train_data, train_pos_id, [word2vec, clusters, LIWC])
+        label_neg = np.zeros(len(encode_neg))
+
+        encode = np.concatenate((encode_pos, encode_neg), axis=0)
+        label = np.concatenate((label_pos, label_neg), axis=0)
+        print encode.shape
+        print label.shape
 
         encode = preprocessing.scale(encode)
-
-        classifier = svm.NuSVC(nu=0.5, kernel='linear', verbose=True)
-        weight = label+1 # pos:neg = 2:1 for imbalanced training
-        classifier.fit(encode, label, weight)
+        classifier = svm.LinearSVC(nverbose=True)
+        #weight = label+1 # pos:neg = 2:1 for imbalanced training
+        classifier.fit(encode, label)
         print 'F1 score: ' + str(f1_score(label, classifier.predict(encode)))
 
 
@@ -112,21 +113,9 @@ def main(n_fold=10):
         ### ============================================================
         print 'Testing>>>>>>>>>>>>>>>>>>>>>>>>>'
 
-        test_data, _, test_label, _, _, _ = dataloader.batch_retrieve(test_id)
-
-        ### Generate Test Data Encodings
-        encode = zeros((len(test_id), n_topics))
-        label = zeros(len(test_id))
-        i = 0
-        for id in test_id:
-            tokens = test_data[id]
-            vec = word2vec.batch_convert(tokens)
-            encode[i,:] = clusters.encode(vec)
-            label[i] = test_label[id]
-            i +=1
-
-        #print encode
-        #print label
+        test_data = dataloader.data_retrieve(test_id)
+        encode = encode_feature(test_data, test_id, [word2vec, clusters, LIWC])
+        label = dataloader.label_retrieve(test_id)
 
         encode = preprocessing.scale(encode)
         print 'F1 score: ' + str(f1_score(label, classifier.predict(encode)))

@@ -13,6 +13,7 @@ import cPickle as pickle
 class get_clusters(object):
     def __init__(self, method='kmeans', n_topics=30):
         self.method = method
+        self.n_topics = n_topics
 
         if method.lower() == 'kmeans':
             self.clusters = KMeans(init='k-means++', n_clusters=n_topics, verbose=1, n_jobs=1)

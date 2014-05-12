@@ -9,23 +9,16 @@ from sklearn import svm
 from csv_dataloader import *
 from get_topics import *
 from get_topics import *
-
+from preprocess import *
+from get_word2vec import *
+from get_clusters import *
+from get_LIWC import *
+from encoder1 import *
 
 def load(filename):
     with open(filename, 'rb') as input:
         obj = pickle.load(input)
         return obj
-
-def preprocess(words):
-
-    words = unicode(words, errors='ignore') #This is for gensim
-    tokens = nltk.WordPunctTokenizer().tokenize(words.lower())
-    # tokens = list(set(tokens))
-    stopwords = nltk.corpus.stopwords.words('english')
-    tokens = [w for w in tokens if w not in stopwords]
-    tokens = [w for w in tokens if len(w)<20 and len(w)>2]
-    tokens = [w for w in tokens if re.match('\W+',w)==None]
-    return tokens
 
 
 def predict():
@@ -39,9 +32,6 @@ def predict():
     dataloader.summary()
     print "Read in finished"
 
-    test_id = dataloader.id
-    test_data, test_ldata, _, _, test_gender, test_time = dataloader.batch_retrieve(test_id)
-
     word2id = get_word2id()
     word2id.load('output/word2id.pk')
     ids = word2id.ids()
@@ -50,26 +40,30 @@ def predict():
     topics = get_topics(id2word=ids, method='lda', n_topics=n_topics)
     topics.load('output/lda_all_100.pk')
 
-    ### Generate Test Data Encodings
-    encode = np.zeros((len(test_id), n_topics))
-    gender = np.zeros((len(test_id),1))
-    time = np.zeros((len(test_id),4))
-    i = 0
-    for id in test_id:
-        tokens = test_ldata[id]
-        #tokens = [test_data[id]]
-        encode[i,:] = topics.encode(tokens)
-        gender[i] = test_gender[id]
-        time[i,:] = [test_time[id].month, test_time[id].day, test_time[id].hour, test_time[id].minute]
-        i +=1
+    # ### Load pre-train word2vector model
+    # word2vec = get_word2vec(model='data/GoogleNews-vectors-negative300.bin', binary=True, size=300)
+    # print 'Pretrained word2vec loaded'
+    #
+    # n_topics = 100
+    # model_file = 'output/clustering_gmm_100.pk';
+    # clusters = get_clusters(method='gmm', n_topics=n_topics)
+    # print 'Cluster Model Loaded...'
+    # clusters.load(model_file)
 
-    encode = preprocessing.scale(encode)
-    time = preprocessing.scale(time)
-    encode = np.concatenate((encode, gender, time), axis=1)
+    ### Calculate LIWC hist
+    LIWC = get_LIWC()
+
+    test_id = dataloader.id
+    test_data = dataloader.data_retrieve(test_id)
+
+    ## Generate Test Data Encodings
+    encode = encode_feature(test_data, test_id, [topics, LIWC])
+    label = dataloader.label_retrieve(test_id)
 
     print encode
 
-    classifier = load('output/model_0.48275862069.pk')
+    encode = preprocessing.scale(encode)
+    classifier = load('output/model_LDA_0.508474576271.pk')
     predict_label = classifier.predict(encode)
 
     with open('output/result.csv', 'w+') as file:

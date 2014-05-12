@@ -91,7 +91,7 @@ class get_LIWC(object):
         else:
             return []
 
-    def calculate_hist(self, words, normalize=True):
+    def encode(self, words, normalize=True):
         hist = np.zeros(67) ## <TODO> Bug here
         for word in words:
             categories = self[word]
@@ -99,7 +99,7 @@ class get_LIWC(object):
             for category in categories:
                 hist[category-1] += 1.0/category_size
         if normalize:
-            hist = hist/np.sum(hist, axis=0)
+            hist = hist/np.sum(hist + 1e-6, axis=0)
         return hist
 
     def load(self, filename):

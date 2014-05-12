@@ -51,8 +51,8 @@ def show_topics(n_topics=100):
     ### Show LDA
     topics = get_topics(id2word=ids, method='lda', n_topics=n_topics)
     topics.load('output/lda_all_100.pk')
-    topics.summary()
+    topics.summary(n_topics=100)
 
 if __name__ == "__main__":
-    # train_LDA()
+    train_LDA()
     show_topics()

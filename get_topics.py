@@ -89,11 +89,11 @@ class get_topics(object):
         return hist
 
 
-    def summary(self):
+    def summary(self, n_topics=10):
         print '#Topics: ' + str(self.model.num_topics)
 
         if self.method == 'lda':
-            topics = self.model.show_topics()
+            topics = self.model.show_topics(topics=-1, topn=n_topics)
         elif self.method == 'hdp':
             topics = self.model.print_topics(topics=self.n_topics, topn=10)
 
