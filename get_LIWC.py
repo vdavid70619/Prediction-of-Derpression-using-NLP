@@ -8,11 +8,16 @@ Copyright by LIWC and Professor Philip Resnik
 '''
 
 import openpyxl
+import cPickle as pickle
+import numpy as np
+from pprint import pprint
 
 class get_LIWC(object):
-    def __init__(self):
+    def __init__(self, verbose=False):
         self.dict = {}
         self.category = {}
+        self.dict = {}
+        self.verbose = verbose
         self._read_LIWC()
 
 
@@ -23,7 +28,6 @@ class get_LIWC(object):
 
         excel = openpyxl.load_workbook(filename=file, use_iterators=True)
         worksheet = excel.get_active_sheet()
-
         category_lengths = {}
         # Do word extraction based on color. :(
         row_i = 1
@@ -39,58 +43,82 @@ class get_LIWC(object):
                         category_lengths[category_i] = 1
                     else:
                         category_lengths[category_i] +=1
-
                     pre_style_id = cell.style_id
+                    if self.verbose:
+                        print cell
 
-                print sum(category_lengths.viewvalues())
+                if self.verbose:
+                    print category_lengths
             elif row_i == 3:
-                category_i = 0
-                pre_style_id = None # hard coding for the specific poster, change may be required for others
+                col_j = 0
+                category_i = 1
                 for cell in row:
-                    if cell.style_id != pre_style_id:
+                    if col_j >= category_lengths[category_i]:
                         category_i += 1
+                        col_j = 0
 
                     if cell.internal_value is not None:
-                        print cell.internal_value
                         self.category[category_i] = cell.internal_value
 
-                    pre_style_id = cell.style_id
-
-                #print category
+                    col_j += 1
             else:
-                category_i = 0
-                pre_style_id = None # hard coding for the specific poster, change may be required for others
+                col_j = 0
+                category_i = 1
                 for cell in row:
-                    if cell.style_id != pre_style_id:
+                    if col_j >= category_lengths[category_i]:
                         category_i += 1
+                        col_j = 0
 
                     if cell.internal_value is not None:
-                        print cell.internal_value
-                        if self.dict.has_key(category_i):
-                            self.dict[category_i].append(cell.internal_value)
+                        word = cell.internal_value.replace('*','')
+                        if self.dict.has_key(word):
+                            self.dict[word].append(category_i)
                         else:
-                            self.dict[category_i] = [cell.internal_value]
+                            self.dict[word] = [category_i]
 
+                    col_j += 1
 
-                    pre_style_id = cell.style_id
-                #print dictionary
             row_i += 1
-
-        print '#Total categories: ' + str(len(self.dict.viewkeys()))
-        print self.dict.viewvalues()
+        if self.verbose:
+            print '#Total categories: ' + str(len(self.dict.viewkeys()))
+            print 'All categories: ' + str(self.category)
+            pprint(self.dict)
 
     def __getitem__(self, word):
-        category = [k for k, v in self.dict.iteritems() if word in v];
-        if category is None:
-            return -1
+        word = word.lower()
+        if self.dict.has_key(word):
+            return self.dict[word]
         else:
-            return category
+            return []
 
+    def calculate_hist(self, words, normalize=True):
+        hist = np.zeros(67) ## <TODO> Bug here
+        for word in words:
+            categories = self[word]
+            category_size = len(categories)
+            for category in categories:
+                hist[category-1] += 1.0/category_size
+        if normalize:
+            hist = hist/np.sum(hist, axis=0)
+        return hist
+
+    def load(self, filename):
+        with open(filename, 'rb') as input:
+            self.dixt = pickle.load(input)
+
+    def save(self, filename):
+        with open(filename, 'wb+') as output:
+            ## save a class object to a file using pickle
+            pickle.dump(self.dict, output, pickle.HIGHEST_PROTOCOL)
 
 def test_liwc():
-    LIWC = get_LIWC()
-    print LIWC['dine']
+    LIWC = get_LIWC(verbose=True)
+    LIWC.save('LIWC_cache.pk')
+    print LIWC.calculate_hist(['I', 'am', 'correct', 'ohwell'], normalize=True)
+    print LIWC['I']
+    print LIWC['am']
+    print LIWC['correct']
+    print LIWC['ohwell']
 
-
-if __name__ == "__main__":
-    test_liwc()
+# if __name__ == "__main__":
+#     test_liwc()
