@@ -19,6 +19,7 @@ class get_LIWC(object):
         self.dict = {}
         self.verbose = verbose
         self._read_LIWC()
+        self._fix_typo()
 
 
     def _read_LIWC(self, file='data/LIWC2007dictionary_poster.xlsx'):
@@ -84,6 +85,13 @@ class get_LIWC(object):
             print 'All categories: ' + str(self.category)
             pprint(self.dict)
 
+    def _fix_typo(self):
+        ### merge 11+12, 24+25, 53+54
+        self.category[11] = unicode('Verbs')
+        self.category[24] = unicode('Social')
+        self.category[53] = unicode('Relativ')
+
+
     def __getitem__(self, word):
         word = word.lower()
         if self.dict.has_key(word):
@@ -114,7 +122,7 @@ class get_LIWC(object):
 def test_liwc():
     LIWC = get_LIWC(verbose=True)
     LIWC.save('LIWC_cache.pk')
-    print LIWC.calculate_hist(['I', 'am', 'correct', 'ohwell'], normalize=True)
+    print LIWC.encode(['I', 'am', 'correct', 'ohwell'], normalize=True)
     print LIWC['I']
     print LIWC['am']
     print LIWC['correct']
