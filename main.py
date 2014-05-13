@@ -46,7 +46,7 @@ def main(n_fold=10):
         ### Convert word to vector
         tokens = sum(dataloader.data.viewvalues(), [])
         print '#Tokens from training data: ' + str(len(tokens))
-        train_vectors = word2vec.batch_convert(tokens)
+        train_vectors = word2vec.encode(tokens)
         print '#Vectors from training data: ' + str(len(train_vectors))
         print 'Training Clusters...'
         clusters.fit(train_vectors)
@@ -102,7 +102,7 @@ def main(n_fold=10):
         print label.shape
 
         encode = preprocessing.scale(encode)
-        classifier = svm.LinearSVC(nverbose=True)
+        classifier = svm.LinearSVC(verbose=True)
         #weight = label+1 # pos:neg = 2:1 for imbalanced training
         classifier.fit(encode, label)
         print 'F1 score: ' + str(f1_score(label, classifier.predict(encode)))

@@ -58,7 +58,6 @@ def predict():
 
     ## Generate Test Data Encodings
     encode = encode_feature(test_data, test_id, [topics, LIWC])
-    label = dataloader.label_retrieve(test_id)
 
     print encode
 

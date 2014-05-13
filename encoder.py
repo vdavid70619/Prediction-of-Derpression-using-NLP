@@ -9,7 +9,7 @@ def encode_feature(samples, ids, encode_method):
     i = 0
     for id in ids:
         tokens = samples['data'][id]
-        vec = encode_method[0].batch_convert(tokens)
+        vec = encode_method[0].encode(tokens)
         topics[i,:] = encode_method[1].encode(vec)
         gender[i] = samples['gender'][id]
         time[i,:] = [samples['time'][id].month, samples['time'][id].day, samples['time'][id].hour, samples['time'][id].minute]

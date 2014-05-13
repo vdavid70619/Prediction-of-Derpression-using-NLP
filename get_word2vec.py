@@ -47,7 +47,7 @@ class get_word2vec(object):
         else:
             return None
 
-    def batch_convert(self, words, verbose=True):
+    def encode(self, words, verbose=False):
 
         batch_size = 100000.0
         total_size = 0.0
