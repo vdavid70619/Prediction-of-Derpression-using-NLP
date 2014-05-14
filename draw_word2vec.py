@@ -1,6 +1,7 @@
 import os
 import matplotlib.pyplot as plt
 from sklearn import manifold
+from nltk import FreqDist
 
 from csv_dataloader import *
 from get_topics import *
@@ -16,7 +17,6 @@ def plot_embedding(X, tokens, title=None):
     ax = plt.subplot(111)
     for i in range(X.shape[0]):
         plt.text(X[i, 0], X[i, 1], str(tokens[i]),
-                color=pl.cm.Set1(y[i] / 10.),
                 fontdict={'weight': 'bold', 'size': 9})
 
     plt.xticks([]), plt.yticks([])
@@ -36,8 +36,11 @@ def draw_word2vec():
     word2vec = get_word2vec(model='data/GoogleNews-vectors-negative300.bin', binary=True, size=300)
     print 'Pretrained word2vec loaded'
 
-
-    tokens = list(set(sum(dataloader.data.viewvalues(), [])))
+    all_tokens = sum(dataloader.data.viewvalues(), [])
+    print '#Tokens: ' + str(len(all_tokens))
+    fdist = FreqDist(all_tokens)
+    tokens = fdist.keys()[1:500]
+    print tokens
     tokens_has_vectors = []
     for token in tokens:
         if word2vec[token] is not None:
@@ -48,9 +51,10 @@ def draw_word2vec():
     print '#Unique Vectors: ' + str(len(vectors))
 
     print("Computing MDS embedding")
-    clf = manifold.MDS(n_components=2, n_init=1, max_iter=100)
+    #clf = manifold.MDS(n_components=2, n_init=1, max_iter=100)
+    clf = manifold.Isomap(n_components=2, max_iter=100)
     vectors_mds = clf.fit_transform(vectors)
-    print("Done. Stress: %f" % clf.stress_)
+    #print("Done. Stress: %f" % clf.stress_)
     plot_embedding(vectors_mds, tokens_has_vectors, "MDS embedding of the words")
 
 if __name__ == '__main__':
