@@ -36,7 +36,7 @@ def main(n_fold=10):
     print "Read in finished"
 
     ### Get word2id first
-    tokens = sum(dataloader.data.viewvalues(), [])
+    tokens = sum(dataloader.ldata.viewvalues(), [])
     word2id = get_word2id()
     if not os.path.exists('output/word2id.pk'):
         word2id.fit(tokens)
@@ -52,8 +52,8 @@ def main(n_fold=10):
     #print LIWC.calculate_hist(tokens, normalize=False)
 
     ### Train and load LDA
-    n_topics = 100
-    model_file = 'output/lda_all_100.pk'
+    n_topics = 25
+    model_file = 'output/lda_all_25    .pk'
     topics = get_topics(id2word=ids, method='lda', n_topics=n_topics)
     if not os.path.exists(model_file):
         print 'Training LDA...'
@@ -93,11 +93,11 @@ def main(n_fold=10):
         ### Balance Train Data
         _, train_pos_id, train_neg_id = dataloader.balance(train_id, K=2)
 
-        encode_pos = encode_feature(train_data, train_pos_id, [topics])
+        encode_pos = encode_feature(train_data, train_pos_id, [topics, LIWC])
         encode_pos = SMOTE(encode_pos, 200, len(train_pos_id)/4)
         label_pos = np.ones(len(encode_pos))
 
-        encode_neg = encode_feature(train_data, train_pos_id, [topics])
+        encode_neg = encode_feature(train_data, train_pos_id, [topics, LIWC])
         label_neg = np.zeros(len(encode_neg))
 
         encode = np.concatenate((encode_pos, encode_neg), axis=0)
@@ -107,11 +107,8 @@ def main(n_fold=10):
 
         ### Train
         encode = preprocessing.scale(encode)
-        classifier = svm.NuSVC(kernel='poly', verbose=True, cache_size=4000)
-        #classifier = svm.LinearSVC(verbose=True)
-        #weight = 10*label+1 # pos:neg = 2:1 for imbalanced training
+        classifier = svm.LinearSVC(verbose=True)
         classifier.fit(encode, label)
-        #print classifier.predict(encode)
         print 'F1 score: ' + str(f1_score(label, classifier.predict(encode)))
 
 
@@ -123,7 +120,7 @@ def main(n_fold=10):
         test_data = dataloader.data_retrieve(test_id)
 
         ### Generate Test Data Encodings
-        encode = encode_feature(test_data, test_id, [topics])
+        encode = encode_feature(test_data, test_id, [topics, LIWC])
         label = dataloader.label_retrieve(test_id)
 
         ### Test
@@ -137,7 +134,7 @@ def main(n_fold=10):
     print 'BEST F1 score: ' + str(np.max(fscores)) + ' by Model ' + str(np.argmax(fscores)+1)
     print 'VAR F1 score: ' + str(np.var(fscores))
 
-    save(models[np.argmax(fscores)], 'output/model_LDA_' + str(fscores[np.argmax(fscores)]) + '.pk')
+    save(models[np.argmax(fscores)], 'output/model_LDA_' + str(n_topics) + '_' + str(fscores[np.argmax(fscores)]) + '.pk')
 
 if __name__ == "__main__":
     main()
