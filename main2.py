@@ -8,6 +8,7 @@ import cPickle as pickle
 import numpy as np
 from sklearn import preprocessing
 from sklearn import svm
+from sklearn import ensemble
 from sklearn.metrics import f1_score
 from smote import *
 
@@ -92,11 +93,11 @@ def main(n_fold=10):
         ### Balance Train Data
         _, train_pos_id, train_neg_id = dataloader.balance(train_id, K=2)
 
-        encode_pos = encode_feature(train_data, train_pos_id, [topics, LIWC])
+        encode_pos = encode_feature(train_data, train_pos_id, [topics])
         encode_pos = SMOTE(encode_pos, 200, len(train_pos_id)/4)
         label_pos = np.ones(len(encode_pos))
 
-        encode_neg = encode_feature(train_data, train_pos_id, [topics, LIWC])
+        encode_neg = encode_feature(train_data, train_pos_id, [topics])
         label_neg = np.zeros(len(encode_neg))
 
         encode = np.concatenate((encode_pos, encode_neg), axis=0)
@@ -106,8 +107,8 @@ def main(n_fold=10):
 
         ### Train
         encode = preprocessing.scale(encode)
-        #classifier = svm.NuSVC(kernel='linear', verbose=True, cache_size=4000)
-        classifier = svm.LinearSVC(verbose=True)
+        classifier = svm.NuSVC(kernel='poly', verbose=True, cache_size=4000)
+        #classifier = svm.LinearSVC(verbose=True)
         #weight = 10*label+1 # pos:neg = 2:1 for imbalanced training
         classifier.fit(encode, label)
         #print classifier.predict(encode)
@@ -122,7 +123,7 @@ def main(n_fold=10):
         test_data = dataloader.data_retrieve(test_id)
 
         ### Generate Test Data Encodings
-        encode = encode_feature(test_data, test_id, [topics, LIWC])
+        encode = encode_feature(test_data, test_id, [topics])
         label = dataloader.label_retrieve(test_id)
 
         ### Test
