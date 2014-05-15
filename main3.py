@@ -13,7 +13,7 @@ from sklearn.metrics import f1_score
 from smote import *
 
 from csv_dataloader import *
-from get_topics import *
+from get_topics2 import *
 from get_LIWC import *
 from preprocess import *
 from encoder1 import *
@@ -23,6 +23,21 @@ def save(obj, filename):
     with open(filename, 'wb+') as output:
         pickle.dump(obj, output, pickle.HIGHEST_PROTOCOL)
 
+def score2label(score):
+    if score in range(0,15):
+        return ['level1']
+    elif score in range(15,20):
+        return ['level2']
+    elif score in range(20,25):
+        return ['level3']
+    elif score in range(25,30):
+        return ['level4']
+    elif score in range(30,34):
+        return ['level5']
+    elif score in range(34,40):
+        return ['level6']
+    else:
+        return ['level7']
 
 def main(n_fold=10):
     ### Load trainning data
@@ -35,33 +50,30 @@ def main(n_fold=10):
     dataloader.summary()
     print "Read in finished"
 
-    ### Get word2id first
-    tokens = sum(dataloader.ldata.viewvalues(), [])
-    word2id = get_word2id()
-    if not os.path.exists('output/word2id.pk'):
-        word2id.fit(tokens)
-        word2id.save('output/word2id.pk')
-    else:
-        word2id.load('output/word2id.pk')
-    ids = word2id.ids()
-    print "#Id: " + str(len(ids.keys()))
-    print '#Tokens from training data: ' + str(len(tokens))
-
     ### Calculate LIWC hist
     LIWC = get_LIWC()
     #print LIWC.calculate_hist(tokens, normalize=False)
 
-    ### Train and load LDA
-    n_topics = 25
-    model_file = 'output/lda_all_25.pk'
-    topics = get_topics(id2word=ids, method='lda', n_topics=n_topics)
+    ### Train and Load LLDA
+    topics = get_topics2(method='LLDA', max_iter=20, n_topics=8)
+    model_file = 'output/LLDA_8_20.pk'
     if not os.path.exists(model_file):
-        print 'Training LDA...'
-        topics.fit(tokens)
+        train_id = dataloader.id
+        train_data = dataloader.data_retrieve(train_id)
+
+        labels = []
+        corpus = []
+
+        for id in train_id:
+            corpus.append(train_data['data'][id])
+            labels.append(score2label(train_data['score'][id]))
+        print 'Training LLDA...'
+        topics.fit(corpus, labels, verbose=True)
         topics.save(model_file)
-        topics.summary()
+        print 'Saved'
     else:
         topics.load(model_file)
+    topics.summary()
 
 
     ### ============================================================
@@ -134,7 +146,7 @@ def main(n_fold=10):
     print 'BEST F1 score: ' + str(np.max(fscores)) + ' by Model ' + str(np.argmax(fscores)+1)
     print 'VAR F1 score: ' + str(np.var(fscores))
 
-    save(models[np.argmax(fscores)], 'output/model_LDA_' + str(n_topics) + '_' + str(fscores[np.argmax(fscores)]) + '.pk')
+    save(models[np.argmax(fscores)], 'output/model_LLDA_8_' + str(fscores[np.argmax(fscores)]) + '.pk')
 
 if __name__ == "__main__":
     main()

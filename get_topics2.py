@@ -60,8 +60,20 @@ class get_topics2(object):
         '''
 
         assert isinstance(X[0], list), 'Not chuncks of lists. Require [[],[],...] as gensim chunk format'
+        docs = [[self.model.term_to_id(term) for term in doc] for doc in X]
 
-        hist = self.model.perplexity(docs=X)
+        phi = self.model.phi()
+        thetas = self.model.theta()
+
+        hist = np.zeros(self.n_topics)
+
+        for doc, theta in zip(docs, thetas):
+            for w in doc:
+                hist += phi[:,w] * theta
+
+        if normalize:
+            hist = hist/(np.sum(hist, axis=0) + 1e-6)
+
         sort_ind = np.argsort(hist)[::-1]  # reverse index sequence after argsort
         hist[sort_ind[topk:]] = 0
         return hist
@@ -73,5 +85,6 @@ class get_topics2(object):
             print "\n%d: " % k,
             for w in numpy.argsort(-phi[k])[:20]:
                 print "+ %.4f*%s" % (phi[k,w], self.model.vocas[w]),
+        print ''
 
 

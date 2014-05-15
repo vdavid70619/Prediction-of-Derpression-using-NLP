@@ -36,9 +36,9 @@ def predict():
     word2id.load('output/word2id.pk')
     ids = word2id.ids()
 
-    n_topics = 100
+    n_topics = 25
     topics = get_topics(id2word=ids, method='lda', n_topics=n_topics)
-    topics.load('output/lda_all_100.pk')
+    topics.load('output/lda_all_25.pk')
 
     # ### Load pre-train word2vector model
     # word2vec = get_word2vec(model='data/GoogleNews-vectors-negative300.bin', binary=True, size=300)
@@ -62,7 +62,7 @@ def predict():
     print encode
 
     encode = preprocessing.scale(encode)
-    classifier = load('output/model_LDA_0.508474576271.pk')
+    classifier = load('output/model_LDA_25_0.463768115942.pk')
     predict_label = classifier.predict(encode)
 
     with open('output/result.csv', 'w+') as file:

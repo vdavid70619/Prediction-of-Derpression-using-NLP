@@ -51,10 +51,10 @@ def draw_word2vec():
     print '#Unique Vectors: ' + str(len(vectors))
 
     print("Computing MDS embedding")
-    #clf = manifold.MDS(n_components=2, n_init=1, max_iter=100)
-    clf = manifold.Isomap(n_components=2, max_iter=100)
+    clf = manifold.MDS(n_components=2, n_init=1, max_iter=2000)
+    #clf = manifold.Isomap(n_components=2, max_iter=100)
     vectors_mds = clf.fit_transform(vectors)
-    #print("Done. Stress: %f" % clf.stress_)
+    print("Done. Stress: %f" % clf.stress_)
     plot_embedding(vectors_mds, tokens_has_vectors, "MDS embedding of the words")
 
 if __name__ == '__main__':
